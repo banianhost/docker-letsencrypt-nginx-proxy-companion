@@ -33,6 +33,23 @@ function get_nginx_proxy_cid {
             break
         fi
     done
+    
+    # TEST: curl --unix-socket /var/run/docker.sock -G -XGET "http://localhost/containers/json" -d 'all=0&filters=%7B%22label%22%3A%5B%22NGINX_PROXY_SWARM_CONTAINER%22%5D%7D' | jq -r ".[] | .Id"
+    echo "checking for swarm mode ... "
+    if [[ -n "${NGINX_PROXY_SWARM_CONTAINER:-}" ]]; then
+        echo "... swarm mode detected"
+        echo ""
+        echo "containers found:"
+        docker_api "/containers/json?all=0&filters=%7B%22label%22%3A%5B%22NGINX_PROXY_SWARM_CONTAINER%22%5D%7D" | jq -r ".[] | .Names[0]"
+        echo "---------------------------"
+        echo ""
+        nginxswarmcontainerid=$(docker_api "/containers/json?all=0&filters=%7B%22label%22%3A%5B%22NGINX_PROXY_SWARM_CONTAINER%22%5D%7D" | jq -r ".[] | .Id")
+        echo "nginxswarmcontainerid: [$nginxswarmcontainerid]"
+        echo "---------------------------"
+        echo ""
+        export NGINX_PROXY_CONTAINER=$nginxswarmcontainerid
+    fi
+    
     if [[ -z "${NGINX_PROXY_CONTAINER:-}" ]]; then
         echo "Error: can't get nginx-proxy container id !" >&2
         echo "Check that you use the --volumes-from option to mount volumes from the nginx-proxy." >&2
